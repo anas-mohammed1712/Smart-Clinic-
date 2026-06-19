@@ -31,15 +31,23 @@ service cloud.firestore {
 
     // Helpers for Role checks
     function isAdmin() {
-      return getRole() == 'Admin';
+      return (isSignedIn() && (
+        request.auth.token.email == 'elkinganas495@gmail.com' ||
+        request.auth.token.email == 'admin@smartclinic.com'
+      )) || getRole() == 'Admin';
     }
 
     function isDoctor() {
-      return getRole() == 'Doctor';
+      return (isSignedIn() && (
+        request.auth.token.email == 'clara@smartclinic.com'
+      )) || getRole() == 'Doctor';
     }
 
     function isReceptionist() {
-      return getRole() == 'Receptionist';
+      return (isSignedIn() && (
+        request.auth.token.email == 'receptionsit@gmail.com' ||
+        request.auth.token.email == 'receptionist@smartclinic.com'
+      )) || getRole() == 'Receptionist';
     }
 
     // Combined staff helper for shared operations

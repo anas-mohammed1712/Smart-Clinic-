@@ -8,8 +8,8 @@ import {
   HeartPulse, ShieldCheck, Stethoscope, Clock, MapPin, 
   Sparkles, Phone, Mail, ChevronRight, Star, HelpCircle, ArrowRight 
 } from 'lucide-react';
-import { DoctorRecord } from '../types';
-import { getDoctors, getCurrentSessionUser } from '../db/localDb';
+import { DoctorRecord, Department } from '../types';
+import { getDoctors, getCurrentSessionUser, getDepartments } from '../db/localDb';
 import { CLINIC_CONFIG } from '../data/clinicConfig';
 
 interface HomeViewProps {
@@ -21,13 +21,16 @@ export default function HomeView({ onNavigate }: HomeViewProps) {
   const [contactForm, setContactForm] = useState({ name: '', email: '', phone: '', message: '' });
   const [contactSuccess, setContactSuccess] = useState(false);
   const [doctors, setDoctors] = useState<DoctorRecord[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
 
-  // Load and sync doctors list from Local Database & Firestore Listener
+  // Load and sync doctors list and departments from Local Database & Firestore Listener
   useEffect(() => {
     setDoctors(getDoctors());
+    setDepartments(getDepartments());
     
     const handleSync = () => {
       setDoctors(getDoctors());
+      setDepartments(getDepartments());
     };
     
     window.addEventListener('smartclinic_db_sync', handleSync);
@@ -140,7 +143,9 @@ export default function HomeView({ onNavigate }: HomeViewProps) {
               {/* Badges */}
               <div className="mt-8 border-t border-gray-100 pt-6 grid grid-cols-3 gap-4">
                 <div>
-                  <span className="block text-2xl font-bold text-gray-900">{CLINIC_CONFIG.specialties.length}</span>
+                  <span className="block text-2xl font-bold text-gray-900">
+                    {departments.length > 0 ? departments.filter(d => d.isActive !== false).length : CLINIC_CONFIG.specialties.length}
+                  </span>
                   <span className="text-[10px] text-gray-400 font-mono uppercase tracking-wider font-semibold">Specialized Depts</span>
                 </div>
                 <div>
@@ -264,30 +269,55 @@ export default function HomeView({ onNavigate }: HomeViewProps) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {CLINIC_CONFIG.specialties.map((dept, idx) => (
-              <div key={idx} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition-all hover:shadow-md flex flex-col justify-between">
-                <div>
-                  <span className={`text-[10px] font-mono font-bold ${dept.text} block mb-2`}>{dept.id}. DEPARTMENT</span>
-                  <h3 className={`text-sm font-bold text-gray-900 ${dept.bg} px-3 py-1.5 rounded-lg inline-block`}>{dept.name}</h3>
-                  <p className="text-xs text-gray-500 mt-3.5 leading-relaxed">{dept.description}</p>
+            {(() => {
+              const COLOR_THEMES = [
+                { bg: 'bg-teal-50', text: 'text-teal-600' },
+                { bg: 'bg-sky-50', text: 'text-sky-600' },
+                { bg: 'bg-amber-50', text: 'text-amber-600' },
+                { bg: 'bg-rose-50', text: 'text-rose-600' },
+                { bg: 'bg-indigo-50', text: 'text-indigo-600' },
+                { bg: 'bg-emerald-50', text: 'text-emerald-600' },
+                { bg: 'bg-cyan-50', text: 'text-cyan-600' },
+                { bg: 'bg-violet-50', text: 'text-violet-600' },
+              ];
+              const activeDbDepts = departments.filter(d => d.isActive !== false);
+              const displayDepts = activeDbDepts.length > 0 ? activeDbDepts.map((d, index) => {
+                const theme = COLOR_THEMES[index % COLOR_THEMES.length];
+                const deptId = String(index + 1).padStart(2, '0');
+                return {
+                  id: deptId,
+                  name: d.name,
+                  description: d.description,
+                  bg: theme.bg,
+                  text: theme.text,
+                };
+              }) : CLINIC_CONFIG.specialties;
+
+              return displayDepts.map((dept, idx) => (
+                <div key={idx} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition-all hover:shadow-md flex flex-col justify-between">
+                  <div>
+                    <span className={`text-[10px] font-mono font-bold ${dept.text} block mb-2`}>{dept.id}. DEPARTMENT</span>
+                    <h3 className={`text-sm font-bold text-gray-900 ${dept.bg} px-3 py-1.5 rounded-lg inline-block`}>{dept.name}</h3>
+                    <p className="text-xs text-gray-500 mt-3.5 leading-relaxed">{dept.description}</p>
+                  </div>
+                  <div className="mt-6 pt-4 border-t border-gray-50 flex items-center justify-between gap-2">
+                    <button 
+                      onClick={() => scrollToSection('doctors-section')}
+                      className="text-[11px] font-bold text-gray-600 hover:text-teal-600 transition-colors cursor-pointer"
+                    >
+                      View Doctors
+                    </button>
+                    <button 
+                      onClick={handleConsultationAction}
+                      className="text-[11px] font-bold text-teal-600 hover:text-teal-700 hover:underline flex items-center space-x-1 cursor-pointer"
+                    >
+                      <span>Book Consultation</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
-                <div className="mt-6 pt-4 border-t border-gray-50 flex items-center justify-between gap-2">
-                  <button 
-                    onClick={() => scrollToSection('doctors-section')}
-                    className="text-[11px] font-bold text-gray-600 hover:text-teal-600 transition-colors cursor-pointer"
-                  >
-                    View Doctors
-                  </button>
-                  <button 
-                    onClick={handleConsultationAction}
-                    className="text-[11px] font-bold text-teal-600 hover:text-teal-700 hover:underline flex items-center space-x-1 cursor-pointer"
-                  >
-                    <span>Book Consultation</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ));
+            })()}
           </div>
         </div>
       </section>
