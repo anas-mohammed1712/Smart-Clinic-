@@ -249,6 +249,16 @@ export function saveUser(user: User): void {
   writeToFirestore('users', user.uid, user);
 }
 
+export function deleteUser(uid: string): void {
+  const users = getUsers().filter(u => u.uid !== uid);
+  saveCollection(KEYS.USERS, users);
+
+  window.dispatchEvent(new CustomEvent('smartclinic_db_sync'));
+
+  // Sync to Firestore
+  removeFromFirestore('users', uid);
+}
+
 // --- Patients ---
 export function getPatients(): PatientRecord[] {
   return getCollection<PatientRecord>(KEYS.PATIENTS);
@@ -296,19 +306,44 @@ export function deletePatient(uidOrId: string): void {
 
 // --- Doctors ---
 export function getDoctors(): DoctorRecord[] {
-  return getCollection<DoctorRecord>(KEYS.DOCTORS);
+  const rawDoctors = getCollection<DoctorRecord>(KEYS.DOCTORS);
+  const doctorUsers = getUsers().filter(u => u.role === 'Doctor');
+  
+  return doctorUsers.map(user => {
+    const matchedDoc = rawDoctors.find(d => d.uid === user.uid || d.doctorId === user.uid);
+    return {
+      uid: user.uid,
+      doctorId: user.uid,
+      fullName: user.fullName,
+      specialty: user.specialty || matchedDoc?.specialty || 'General Care',
+      experience: user.experience || matchedDoc?.experience || '3 Years',
+      phone: user.phone || matchedDoc?.phone || '',
+      email: user.email,
+      availability: user.availability || matchedDoc?.availability || ['Monday', 'Wednesday'],
+      profileImage: user.profileImage || matchedDoc?.profileImage || '',
+      bio: user.bio || matchedDoc?.bio || 'Committed to delivering warm, high-quality family medical assistance.',
+      department: user.department || matchedDoc?.department || 'General Practice',
+      departmentId: user.departmentId || matchedDoc?.departmentId || '',
+      specialization: user.specialization || matchedDoc?.specialization || '',
+      experienceYears: user.experienceYears || matchedDoc?.experienceYears || 3,
+      weeklySchedule: user.weeklySchedule || matchedDoc?.weeklySchedule,
+      appointmentDuration: user.appointmentDuration || matchedDoc?.appointmentDuration || 30,
+      vacationMode: user.vacationMode || matchedDoc?.vacationMode || false,
+      unavailableDays: user.unavailableDays || matchedDoc?.unavailableDays || []
+    };
+  });
 }
 
 export function saveDoctor(doctor: DoctorRecord): void {
-  const doctors = getDoctors();
-  const index = doctors.findIndex(d => d.uid === doctor.uid || d.doctorId === doctor.doctorId);
-  const doctorToSave = index >= 0 ? { ...doctors[index], ...doctor } : doctor;
+  const rawDoctors = getCollection<DoctorRecord>(KEYS.DOCTORS);
+  const index = rawDoctors.findIndex(d => d.uid === doctor.uid || d.doctorId === doctor.doctorId);
+  const doctorToSave = index >= 0 ? { ...rawDoctors[index], ...doctor } : doctor;
   if (index >= 0) {
-    doctors[index] = doctorToSave;
+    rawDoctors[index] = doctorToSave;
   } else {
-    doctors.push(doctorToSave);
+    rawDoctors.push(doctorToSave);
   }
-  saveCollection(KEYS.DOCTORS, doctors);
+  saveCollection(KEYS.DOCTORS, rawDoctors);
 
   // Sync to general users if doctor specialty/details change
   const users = getUsers();
@@ -319,6 +354,13 @@ export function saveDoctor(doctor: DoctorRecord): void {
     users[userIndex].specialty = doctorToSave.specialty;
     users[userIndex].experience = doctorToSave.experience;
     users[userIndex].availability = doctorToSave.availability;
+    users[userIndex].bio = doctorToSave.bio;
+    users[userIndex].department = doctorToSave.department;
+    users[userIndex].departmentId = doctorToSave.departmentId;
+    users[userIndex].weeklySchedule = doctorToSave.weeklySchedule;
+    users[userIndex].appointmentDuration = doctorToSave.appointmentDuration;
+    users[userIndex].vacationMode = doctorToSave.vacationMode;
+    users[userIndex].unavailableDays = doctorToSave.unavailableDays;
     saveCollection(KEYS.USERS, users);
 
     writeToFirestore('users', users[userIndex].uid, users[userIndex]);
@@ -332,7 +374,7 @@ export function saveDoctor(doctor: DoctorRecord): void {
 }
 
 export function deleteDoctor(uidOrId: string): void {
-  const doctors = getDoctors().filter(d => d.uid !== uidOrId && d.doctorId !== uidOrId);
+  const doctors = getCollection<DoctorRecord>(KEYS.DOCTORS).filter(d => d.uid !== uidOrId && d.doctorId !== uidOrId);
   saveCollection(KEYS.DOCTORS, doctors);
 
   window.dispatchEvent(new CustomEvent('smartclinic_db_sync'));

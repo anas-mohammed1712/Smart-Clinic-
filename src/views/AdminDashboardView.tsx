@@ -19,7 +19,7 @@ import {
   DoctorDepartmentRequest
 } from '../types';
 import { 
-  getUsers, saveUser, getPatients, savePatient, deletePatient,
+  getUsers, saveUser, deleteUser, getPatients, savePatient, deletePatient,
   getDoctors, saveDoctor, deleteDoctor, getAppointments, saveAppointment, 
   deleteAppointment, getMedicalRecords, saveMedicalRecord, 
   getPrescriptions, getBillingInvoices, saveBillingInvoice,
@@ -426,6 +426,9 @@ export default function AdminDashboardView({ sessionUser, onNavigate, initialTab
     triggerNotification(user.uid, 'Security Alert', `Your account clearance has been changed to ${updated.isActive ? 'Active' : 'Suspended'}.`, 'error');
   };
 
+  const isIframe = typeof window !== 'undefined' && window.self !== window.top;
+  const confirmAction = (msg: string) => isIframe || window.confirm(msg);
+
   const handleDeleteUser = (uid: string) => {
     if (uid === sessionUser.uid) {
       triggerToast('Forbidden: You cannot delete your own session root user.', 'error');
@@ -434,7 +437,7 @@ export default function AdminDashboardView({ sessionUser, onNavigate, initialTab
     const victim = users.find(u => u.uid === uid);
     if (!victim) return;
 
-    if (confirm(`CRITICAL DESTRUCTIVE OPERATION: Delete ${victim.fullName}? All profile access files will be permanently purged.`)) {
+    if (confirmAction(`CRITICAL DESTRUCTIVE OPERATION: Delete ${victim.fullName}? All profile access files will be permanently purged.`)) {
       // Clean relationships
       const relativeDoctor = doctors.find(d => d.uid === uid);
       if (relativeDoctor) {
@@ -445,10 +448,8 @@ export default function AdminDashboardView({ sessionUser, onNavigate, initialTab
         deletePatient(relativePatient.uid);
       }
 
-      // We remove them from users array safely
-      const updatedUsers = users.filter(u => u.uid !== uid);
-      localStorage.setItem('smartclinic_users', JSON.stringify(updatedUsers));
-      window.dispatchEvent(new CustomEvent('smartclinic_db_sync'));
+      // Safely delete using the localDb helper which syncs to Firestore
+      deleteUser(uid);
 
       triggerToast(`Account files for ${victim.fullName} permanently erased from database registries.`);
     }
@@ -525,9 +526,9 @@ export default function AdminDashboardView({ sessionUser, onNavigate, initialTab
   };
 
   const handleDeleteDoctorRecord = (uid: string) => {
-    if (confirm("Are you sure you want to dismiss this Dr. Consultant from active clinician registry?")) {
+    if (confirmAction("Are you sure you want to dismiss this Dr. Consultant from active clinician registry?")) {
       deleteDoctor(uid);
-      triggerToast('Doctor successfully removed from aktif records');
+      triggerToast('Doctor successfully removed from active records');
     }
   };
 
@@ -583,7 +584,7 @@ export default function AdminDashboardView({ sessionUser, onNavigate, initialTab
   };
 
   const handleDeletePatient = (uid: string) => {
-    if (confirm("Are you sure you want to dismiss this patient record from clinic registry?")) {
+    if (confirmAction("Are you sure you want to dismiss this patient record from clinic registry?")) {
       deletePatient(uid);
       triggerToast('Patient record deleted successfully.');
     }
@@ -1286,7 +1287,7 @@ export default function AdminDashboardView({ sessionUser, onNavigate, initialTab
                             </button>
                             <button 
                               onClick={() => {
-                                if (confirm("Dismiss this appointment from queue ledger?")) {
+                                if (confirmAction("Dismiss this appointment from queue ledger?")) {
                                   deleteAppointment(a.id);
                                   triggerToast('Appointment records cleared.');
                                 }
@@ -2148,7 +2149,7 @@ export default function AdminDashboardView({ sessionUser, onNavigate, initialTab
           };
 
           const handleDeleteClick = (id: string, name: string) => {
-            if (window.confirm(`Are you sure you want to delete the department "${name}"?`)) {
+            if (confirmAction(`Are you sure you want to delete the department "${name}"?`)) {
               deleteDepartment(id);
               triggerToast(`Department "${name}" deleted.`);
               setRefreshTrigger((prev) => prev + 1);
