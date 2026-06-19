@@ -7,6 +7,7 @@ import { SEED_USERS, SEED_PATIENTS, SEED_DOCTORS, SEED_APPOINTMENTS, SEED_MEDICA
 import { User, PatientRecord, DoctorRecord, Appointment, MedicalRecord, Prescription, BillingInvoice, AppNotification, Department, DoctorDepartmentRequest } from '../types';
 import { db, auth } from './firebase';
 import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 
 // Storage keys
 const KEYS = {
@@ -108,36 +109,112 @@ async function removeFromFirestore(collectionPath: string, docId: string) {
 
 // Background Live synchronizer
 let listenersRegistered = false;
+let activeUnsubscribes: (() => void)[] = [];
 
 export function setupFirestoreListeners(): void {
   if (listenersRegistered) return;
   listenersRegistered = true;
 
-  const collections = [
-    { key: KEYS.USERS, path: 'users' },
-    { key: KEYS.PATIENTS, path: 'patients' },
-    { key: KEYS.DOCTORS, path: 'doctors' },
-    { key: KEYS.APPOINTMENTS, path: 'appointments' },
-    { key: KEYS.MEDICAL_RECORDS, path: 'medical_records' },
-    { key: KEYS.PRESCRIPTIONS, path: 'prescriptions' },
-    { key: KEYS.BILLING, path: 'billing' },
-    { key: KEYS.NOTIFICATIONS, path: 'notifications' },
-    { key: KEYS.DEPARTMENTS, path: 'departments' },
-    { key: KEYS.DOCTOR_DEPARTMENT_REQUESTS, path: 'doctorDepartmentRequests' },
-  ];
+  onAuthStateChanged(auth, async (user) => {
+    // 1. Clean up existing active subscriptions to prevent permission leaks
+    activeUnsubscribes.forEach(unsub => unsub());
+    activeUnsubscribes = [];
 
-  collections.forEach(({ key, path }) => {
-    onSnapshot(collection(db, path), (snapshot) => {
-      const items: any[] = [];
-      snapshot.forEach((doc) => {
-        items.push({ ...doc.data() });
+    if (!user) {
+      console.log("No authenticated user session, holding Firestore subscriptions.");
+      return;
+    }
+
+    console.log("User authenticated in Firestore context:", user.email, "- initializing database synchronization.");
+
+    // 2. Perform local data seeding to Firestore if it has not been done yet for this user
+    const syncKey = `smartclinic_firestore_synced_${user.uid}`;
+    if (!localStorage.getItem(syncKey)) {
+      localStorage.setItem(syncKey, 'true');
+      console.log("First-time session start for active user. Copying local datasets to cloud Firestore storage...");
+      try {
+        // Seed users
+        const users = getUsers();
+        for (const u of users) {
+          await writeToFirestore('users', u.uid, u);
+        }
+        // Seed patients
+        const patients = getPatients();
+        for (const p of patients) {
+          await writeToFirestore('patients', p.uid || p.patientId, p);
+        }
+        // Seed raw doctors
+        const rawDoctors = getCollection<DoctorRecord>(KEYS.DOCTORS);
+        for (const d of rawDoctors) {
+          await writeToFirestore('doctors', d.uid || d.doctorId, d);
+        }
+        // Seed appointments
+        const appointments = getCollection<Appointment>(KEYS.APPOINTMENTS);
+        for (const a of appointments) {
+          await writeToFirestore('appointments', a.id, a);
+        }
+        // Seed medical records
+        const medicalRecords = getCollection<MedicalRecord>(KEYS.MEDICAL_RECORDS);
+        for (const m of medicalRecords) {
+          await writeToFirestore('medical_records', m.id, m);
+        }
+        // Seed prescriptions
+        const prescriptions = getCollection<Prescription>(KEYS.PRESCRIPTIONS);
+        for (const pr of prescriptions) {
+          await writeToFirestore('prescriptions', pr.id, pr);
+        }
+        // Seed billing
+        const billing = getCollection<BillingInvoice>(KEYS.BILLING);
+        for (const b of billing) {
+          await writeToFirestore('billing', b.id, b);
+        }
+        // Seed notifications
+        const notifications = getCollection<AppNotification>(KEYS.NOTIFICATIONS);
+        for (const n of notifications) {
+          await writeToFirestore('notifications', n.id, n);
+        }
+        // Seed departments
+        const departments = getCollection<Department>(KEYS.DEPARTMENTS);
+        for (const dept of departments) {
+          await writeToFirestore('departments', dept.id, dept);
+        }
+        // Seed doctor department requests
+        const requests = getCollection<DoctorDepartmentRequest>(KEYS.DOCTOR_DEPARTMENT_REQUESTS);
+        for (const r of requests) {
+          await writeToFirestore('doctorDepartmentRequests', r.id, r);
+        }
+        console.log("Local datasets successfully pushed to Firestore.");
+      } catch (err) {
+        console.error("Critical error during initial local-to-cloud Firestore seeding:", err);
+      }
+    }
+
+    // 3. Set up listeners
+    const collections = [
+      { key: KEYS.USERS, path: 'users' },
+      { key: KEYS.PATIENTS, path: 'patients' },
+      { key: KEYS.DOCTORS, path: 'doctors' },
+      { key: KEYS.APPOINTMENTS, path: 'appointments' },
+      { key: KEYS.MEDICAL_RECORDS, path: 'medical_records' },
+      { key: KEYS.PRESCRIPTIONS, path: 'prescriptions' },
+      { key: KEYS.BILLING, path: 'billing' },
+      { key: KEYS.NOTIFICATIONS, path: 'notifications' },
+      { key: KEYS.DEPARTMENTS, path: 'departments' },
+      { key: KEYS.DOCTOR_DEPARTMENT_REQUESTS, path: 'doctorDepartmentRequests' },
+    ];
+
+    collections.forEach(({ key, path }) => {
+      const unsub = onSnapshot(collection(db, path), (snapshot) => {
+        const items: any[] = [];
+        snapshot.forEach((doc) => {
+          items.push({ ...doc.data() });
+        });
+        saveCollection(key, items);
+        window.dispatchEvent(new CustomEvent('smartclinic_db_sync'));
+      }, (error) => {
+        console.warn(`Firestore onSnapshot subscription failed/restricted for ${path}:`, error.message);
       });
-      // Update local cache
-      saveCollection(key, items);
-      // Dispatch sync event to notify any mounted visual views
-      window.dispatchEvent(new CustomEvent('smartclinic_db_sync'));
-    }, (error) => {
-      console.warn(`Firestore onSnapshot subscription failed/restricted for ${path}:`, error.message);
+      activeUnsubscribes.push(unsub);
     });
   });
 }
@@ -145,7 +222,7 @@ export function setupFirestoreListeners(): void {
 // Help initialize data if not present
 export function initializeDatabase() {
   // Wipe old stale mock data when the dummy data deletion is requested
-  if (!localStorage.getItem('smartclinic_dummy_data_cleared_v3')) {
+  if (!localStorage.getItem('smartclinic_dummy_data_cleared_v4')) {
     localStorage.removeItem(KEYS.USERS);
     localStorage.removeItem(KEYS.PATIENTS);
     localStorage.removeItem(KEYS.DOCTORS);
@@ -157,11 +234,48 @@ export function initializeDatabase() {
     localStorage.removeItem(KEYS.CURRENT_USER);
     localStorage.removeItem(KEYS.DEPARTMENTS);
     localStorage.removeItem(KEYS.DOCTOR_DEPARTMENT_REQUESTS);
-    localStorage.setItem('smartclinic_dummy_data_cleared_v3', 'true');
+    localStorage.setItem('smartclinic_dummy_data_cleared_v4', 'true');
   }
 
   if (!localStorage.getItem(KEYS.DEPARTMENTS)) {
-    localStorage.setItem(KEYS.DEPARTMENTS, JSON.stringify([]));
+    const defaultDepts: Department[] = [
+      {
+        id: "01",
+        name: "Dental Care",
+        description: "Complete family aesthetic dentistry, crowns, root canals, and emergency tooth replacements.",
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: "02",
+        name: "Dermatology",
+        description: "Advanced skincare consults, eczema triggers management, and benign mole removals.",
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: "03",
+        name: "Pediatrics",
+        description: "Warm growth examinations, infant immunization calendars, and childhood nutrition counseling.",
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: "04",
+        name: "Cardiology",
+        description: "Electrocardiography tests, preventative wellness plans, and arterial hypertension medical monitors.",
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: "05",
+        name: "Internal Medicine",
+        description: "Comprehensive systemic reviews, chronic endocrine management, and regular adult lab followups.",
+        isActive: true,
+        createdAt: new Date().toISOString()
+      }
+    ];
+    localStorage.setItem(KEYS.DEPARTMENTS, JSON.stringify(defaultDepts));
   }
 
   if (!localStorage.getItem(KEYS.DOCTOR_DEPARTMENT_REQUESTS)) {

@@ -12,42 +12,32 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Helper: Check if user document exists in firestore
-    function userExists(userId) {
-      return exists(/databases/$(database)/documents/users/$(userId));
-    }
-
-    // Helper: Get user document data
-    function getUserData(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data;
-    }
-
-    // Helper: Get checked-in user's role
-    function getRole() {
-      return isSignedIn() && userExists(request.auth.uid)
-        ? getUserData(request.auth.uid).role
-        : 'Patient';
-    }
-
     // Helpers for Role checks
     function isAdmin() {
-      return (isSignedIn() && (
-        request.auth.token.email == 'elkinganas495@gmail.com' ||
-        request.auth.token.email == 'admin@smartclinic.com'
-      )) || getRole() == 'Admin';
+      return isSignedIn() && (
+        request.auth.uid == 'eSWQcop2ZebscIz3C4TxjWFSUh72' ||
+        request.auth.token.get('email', '') == 'elkinganas495@gmail.com' ||
+        request.auth.token.get('email', '') == 'admin@smartclinic.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) ? 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin' : false)
+      );
     }
 
     function isDoctor() {
-      return (isSignedIn() && (
-        request.auth.token.email == 'clara@smartclinic.com'
-      )) || getRole() == 'Doctor';
+      return isSignedIn() && (
+        request.auth.token.get('email', '') == 'clara@smartclinic.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) ? 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Doctor' : false)
+      );
     }
 
     function isReceptionist() {
-      return (isSignedIn() && (
-        request.auth.token.email == 'receptionsit@gmail.com' ||
-        request.auth.token.email == 'receptionist@smartclinic.com'
-      )) || getRole() == 'Receptionist';
+      return isSignedIn() && (
+        request.auth.token.get('email', '') == 'receptionsit@gmail.com' ||
+        request.auth.token.get('email', '') == 'receptionist@smartclinic.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) ? 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Receptionist' : false)
+      );
     }
 
     // Combined staff helper for shared operations
