@@ -1,0 +1,459 @@
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Care Workstation Dashboard";
+    var userRole = HttpContextAccessor.HttpContext?.Session.GetString("UserRole") ?? "Patient";
+    var userFullName = HttpContextAccessor.HttpContext?.Session.GetString("UserFullName") ?? "Marcus Aurelius";
+    var userEmail = HttpContextAccessor.HttpContext?.Session.GetString("UserEmail") ?? "marcus@philosophy.com";
+}
+
+<div class="row text-start g-4">
+    <!-- Title Area -->
+    <div class="col-12 border-bottom pb-3 mb-2 d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
+        <div>
+            <span class="badge text-uppercase fw-extrabold tracking-widest text-teal bg-teal-subtle px-3 py-1.5 rounded-pill mb-2" style="color: #0d9488; background-color: #f0fdfa; font-size: 10px;">
+                SECURE MEDICAL LEDGER SESSION
+            </span>
+            <h1 class="h2 fw-black text-dark mb-0">System Executive Dashboard</h1>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <div class="text-end">
+                <span class="text-muted d-block font-mono" style="font-size: 10px;">Session Guard Active</span>
+                <span class="fw-bold text-dark" style="font-size: 13.5px;">@userFullName (@userRole)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Layout Grid: Tab links + panels -->
+    <div class="col-md-3">
+        <div class="card border border-light shadow-sm p-3 rounded-4 bg-white">
+            <span class="text-slate-400 text-uppercase fw-bold d-block mb-3 px-2 font-mono" style="font-size: 9px;">Clinic Modules</span>
+            <div class="nav flex-column nav-pills gap-1" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                <button class="nav-link active text-start rounded-3 py-2.5 px-3 fw-bold text-sm" id="v-pills-overview-tab" data-bs-toggle="pill" data-bs-target="#v-pills-overview" type="button" role="tab">
+                    <i class="bi bi-grid-fill me-2"></i>Overview Analytics
+                </button>
+
+                @if (userRole == "Admin")
+                {
+                    <button class="nav-link text-start rounded-3 py-2.5 px-3 fw-bold text-sm" id="v-pills-doctors-tab" data-bs-toggle="pill" data-bs-target="#v-pills-doctors" type="button" role="tab">
+                        <i class="bi bi-person-fill-gear me-2"></i>Manage Clinicians
+                    </button>
+                    <button class="nav-link text-start rounded-3 py-2.5 px-3 fw-bold text-sm" id="v-pills-patients-tab" data-bs-toggle="pill" data-bs-target="#v-pills-patients" type="button" role="tab">
+                        <i class="bi bi-people-fill me-2"></i>Patients CRM
+                    </button>
+                }
+
+                @if (userRole == "Doctor")
+                {
+                    <button class="nav-link text-start rounded-3 py-2.5 px-3 fw-bold text-sm" id="v-pills-doctor-appts-tab" data-bs-toggle="pill" data-bs-target="#v-pills-doctor-appts" type="button" role="tab">
+                        <i class="bi bi-calendar-check-fill me-2"></i>My Consult Schedule
+                    </button>
+                    <button class="nav-link text-start rounded-3 py-2.5 px-3 fw-bold text-sm" id="v-pills-records-tab" data-bs-toggle="pill" data-bs-target="#v-pills-records" type="button" role="tab">
+                        <i class="bi bi-file-earmark-medical-fill me-2"></i>Write Medical File
+                    </button>
+                }
+
+                @if (userRole == "Receptionist")
+                {
+                    <button class="nav-link text-start rounded-3 py-2.5 px-3 fw-bold text-sm" id="v-pills-receptionist-tab" data-bs-toggle="pill" data-bs-target="#v-pills-receptionist" type="button" role="tab">
+                        <i class="bi bi-person-plus-fill me-2"></i>Register Outpatient
+                    </button>
+                }
+
+                @if (userRole == "Patient")
+                {
+                    <button class="nav-link text-start rounded-3 py-2.5 px-3 fw-bold text-sm" id="v-pills-book-tab" data-bs-toggle="pill" data-bs-target="#v-pills-book" type="button" role="tab">
+                        <i class="bi bi-calendar-plus-fill me-2"></i>Book Appointment
+                    </button>
+                    <button class="nav-link text-start rounded-3 py-2.5 px-3 fw-bold text-sm" id="v-pills-patient-history-tab" data-bs-toggle="pill" data-bs-target="#v-pills-patient-history" type="button" role="tab">
+                        <i class="bi bi-clock-history me-2"></i>My Consult Logs
+                    </button>
+                }
+
+                <a href="@Url.Action("SignOut", "Account")" class="nav-link text-start rounded-3 py-2.5 px-3 fw-bold text-sm text-danger mt-4">
+                    <i class="bi bi-box-arrow-right me-2"></i>Sign Out Securely
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Panels Area -->
+    <div class="col-md-9">
+        <div class="tab-content bg-white border border-light p-4 rounded-4 shadow-sm" id="v-pills-tabContent" style="min-height: 450px;">
+            
+            <!-- PANEL 1: OVERVIEW -->
+            <div class="tab-pane fade show active" id="v-pills-overview" role="tabpanel">
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6 col-md-3">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <span class="d-block text-2xl fw-black font-mono text-dark mb-1">@((ViewBag.Doctors as List<SmartClinicManagementSystem.Models.Doctor>)?.Count ?? 0)</span>
+                            <span class="text-uppercase fw-bold text-muted font-mono" style="font-size: 9px;">Specialists</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <span class="d-block text-2xl fw-black font-mono text-dark mb-1">@((ViewBag.Patients as List<SmartClinicManagementSystem.Models.Patient>)?.Count ?? 0)</span>
+                            <span class="text-uppercase fw-bold text-muted font-mono" style="font-size: 9px;">Active Files</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <span class="d-block text-2xl fw-black font-mono text-dark mb-1">@((ViewBag.Appointments as List<SmartClinicManagementSystem.Models.Appointment>)?.Count ?? 0)</span>
+                            <span class="text-uppercase fw-bold text-muted font-mono" style="font-size: 9px;">Bookings</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <span class="d-block text-2xl fw-black font-mono text-emerald-600 mb-1">$350.00</span>
+                            <span class="text-uppercase fw-bold text-muted font-mono" style="font-size: 9px;">Total Settled</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border rounded-4 p-4 text-start bg-light mb-4">
+                    <h5 class="fw-bold mb-1">Admissions Approval List</h5>
+                    <p class="text-muted text-sm font-mono" style="font-size: 11px;">Verify outstanding appointment request triggers</p>
+                    
+                    <div class="table-responsive mt-3">
+                        <table class="table table-sm text-sm align-middle">
+                            <thead class="table-light">
+                                <tr style="font-size: 10px;">
+                                    <th>Patient</th>
+                                    <th>Doctor</th>
+                                    <th>Schedule Date</th>
+                                    <th>Symptoms Briefing</th>
+                                    <th class="text-end">Command Center</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (ViewBag.Appointments != null)
+                                {
+                                    var appts = (List<SmartClinicManagementSystem.Models.Appointment>)ViewBag.Appointments;
+                                    if (appts.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4 text-muted font-mono text-xs">No active appointment queues.</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        foreach (var appt in appts)
+                                        {
+                                            <tr>
+                                                <td class="fw-bold">@appt.PatientName</td>
+                                                <td class="text-teal">@appt.DoctorName</td>
+                                                <td class="font-mono">@appt.Date &nbsp; @appt.Time</td>
+                                                <td class="text-muted italic text-truncate" style="max-width: 180px;">@appt.Symptoms</td>
+                                                <td class="text-end">
+                                                    @if (userRole == "Admin" || userRole == "Doctor")
+                                                    {
+                                                        <form asp-controller="Appointments" asp-action="UpdateStatus" method="post" class="d-inline-block">
+                                                            <input type="hidden" name="id" value="@appt.Id" />
+                                                            <input type="hidden" name="status" value="Approved" />
+                                                            <button type="submit" class="btn btn-emerald-outline btn-sm me-1 p-1" style="color: #10b981; border: 1px solid #10b981; border-radius: 6px; font-size: 11px;">Approve</button>
+                                                        </form>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-warning text-dark">@appt.Status</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 2: ADMIN - MANAGE DOCTORS -->
+            @if (userRole == "Admin")
+            {
+                <div class="tab-pane fade" id="v-pills-doctors" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h5 class="fw-bold mb-0">Board Specialists Registry</h5>
+                            <p class="text-muted font-mono" style="font-size: 10px;">Registered clinical specialist directories</p>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle text-sm">
+                            <thead class="table-light">
+                                <tr style="font-size: 11px;">
+                                    <th>Doctor Consultant</th>
+                                    <th>Specialization Division</th>
+                                    <th>Phone Line</th>
+                                    <th>Registered Email</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (ViewBag.Doctors != null)
+                                {
+                                    foreach (var doc in (List<SmartClinicManagementSystem.Models.Doctor>)ViewBag.Doctors)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold">@doc.FullName</td>
+                                            <td><span class="badge bg-teal-subtle text-teal text-uppercase fw-bold" style="color: #0d9488; background-color: #f0fdfa;">@doc.Specialty</span></td>
+                                            <td class="font-mono text-muted">@doc.Phone</td>
+                                            <td class="font-mono text-muted">@doc.Email</td>
+                                            <td class="text-end">
+                                                <form asp-controller="Doctors" asp-action="Delete" method="post" class="d-inline">
+                                                    <input type="hidden" name="id" value="@doc.Uid" />
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-3"><i class="bi bi-trash-fill"></i></button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="v-pills-patients" role="tabpanel">
+                    <h5 class="fw-bold mb-1">Outpatient Roster</h5>
+                    <p class="text-muted font-mono mb-4" style="font-size: 10px;">HIPAA secure active outpatient details</p>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle text-sm">
+                            <thead class="table-light">
+                                <tr style="font-size: 11px;">
+                                    <th>Active Patient</th>
+                                    <th>Clinical Code</th>
+                                    <th>Age & Gender</th>
+                                    <th>Phone Number</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (ViewBag.Patients != null)
+                                {
+                                    foreach (var p in (List<SmartClinicManagementSystem.Models.Patient>)ViewBag.Patients)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold">@p.FullName</td>
+                                            <td class="font-mono fw-bold text-dark">@p.PatientId</td>
+                                            <td>@p.Age Yrs &bull; @p.Gender</td>
+                                            <td class="font-mono text-muted">@p.Phone</td>
+                                            <td class="text-end">
+                                                <form asp-controller="Patients" asp-action="Delete" method="post" class="d-inline">
+                                                    <input type="hidden" name="id" value="@p.Uid" />
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-3"><i class="bi bi-trash-fill"></i></button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            <!-- PANEL 3: DOCTOR CONSULT SESSIONS -->
+            @if (userRole == "Doctor")
+            {
+                <div class="tab-pane fade" id="v-pills-doctor-appts" role="tabpanel">
+                    <h5 class="fw-bold mb-1">Specialist Consultation Inboxes</h5>
+                    <p class="text-muted font-mono mb-4" style="font-size: 10px;">Manage active scheduled outpatients</p>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle text-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Schedule Time</th>
+                                    <th>Reported Symptoms</th>
+                                    <th>State Node</th>
+                                    <th class="text-end">Verify Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (ViewBag.Appointments != null)
+                                {
+                                    foreach (var appt in (List<SmartClinicManagementSystem.Models.Appointment>)ViewBag.Appointments)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold">@appt.PatientName</td>
+                                            <td class="font-mono">@appt.Date @appt.Time</td>
+                                            <td class="italic text-muted">@appt.Symptoms</td>
+                                            <td><span class="badge bg-warning text-dark">@appt.Status</span></td>
+                                            <td class="text-end">
+                                                <form asp-controller="Appointments" asp-action="UpdateStatus" method="post" class="d-inline">
+                                                    <input type="hidden" name="id" value="@appt.Id" />
+                                                    <input type="hidden" name="status" value="Completed" />
+                                                    <button type="submit" class="btn btn-teal btn-sm">Complete session</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="v-pills-records" role="tabpanel">
+                    <h5 class="fw-bold mb-1">Write Outpatient Medical Card</h5>
+                    <p class="text-muted font-mono mb-4" style="font-size: 10px;">HIPAA secure digital outpatient entry</p>
+
+                    <form class="space-y-3" style="font-size: 13.5px;">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold select-label text-dark">Select Patient ID *</label>
+                            <select class="form-select rounded-3 p-2.5">
+                                <option value="">-- Choose target Patient --</option>
+                                @if (ViewBag.Patients != null)
+                                {
+                                    foreach (var p in (List<SmartClinicManagementSystem.Models.Patient>)ViewBag.Patients)
+                                    {
+                                        <option value="@p.PatientId">@p.FullName (@p.PatientId)</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-secondary">Clinical Symptoms & Vitals *</label>
+                            <input type="text" class="form-control rounded-3" placeholder="BP 125/80, body temp 37.2°C" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-secondary">Formal Clinical Diagnosis *</label>
+                            <input type="text" class="form-control rounded-3" placeholder="Chronic Atopic Skin barrier infection" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-secondary">Therapeutic Treatment Plan Outline *</label>
+                            <textarea class="form-control rounded-3" rows="3" placeholder="Specify antibiotic references, rest duration etc..."></textarea>
+                        </div>
+                        <button type="button" onclick="alert('Digital record entry submitted to simulated Firestore!')" class="btn btn-teal w-100 p-2.5">Store Clinical Record</button>
+                    </form>
+                </div>
+            }
+
+            <!-- PANEL 4: RECEPTIONIST PATIENT INTAKE -->
+            @if (userRole == "Receptionist")
+            {
+                <div class="tab-pane fade show active" id="v-pills-receptionist" role="tabpanel">
+                    <h5 class="fw-bold mb-1">Manual Walk-in Outpatient Registration</h5>
+                    <p class="text-muted font-mono mb-4" style="font-size: 10px;">Incorporate physical walk-in outpatients with staff assistance</p>
+
+                    <form asp-controller="Account" asp-action="Register" method="post" class="text-start">
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label class="form-label fw-semibold text-secondary" style="font-size: 12px;">Full Name *</label>
+                                <input type="text" name="fullName" required class="form-control p-2.5 rounded-3" style="font-size: 13px;" placeholder="John Doe" />
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-semibold text-secondary" style="font-size: 12px;">Email Address *</label>
+                                <input type="email" name="email" required class="form-control p-2.5 rounded-3" style="font-size: 13px;" placeholder="john@doe.net" />
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-semibold text-secondary" style="font-size: 12px;">Phone Number *</label>
+                                <input type="text" name="phone" required class="form-control p-2.5 rounded-3" style="font-size: 13px;" placeholder="+1 (555) 012-3211" />
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-semibold text-secondary" style="font-size: 12px;">Date of Birth *</label>
+                                <input type="date" name="dob" required class="form-control p-2.5 rounded-3" style="font-size: 13px;" />
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-semibold text-secondary" style="font-size: 12px;">Gender *</label>
+                                <select name="gender" class="form-select p-2.5 rounded-3" style="font-size: 13px;">
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-semibold text-secondary" style="font-size: 12px;">Registered Residence Address *</label>
+                                <input type="text" name="address" required class="form-control p-2.5 rounded-3" style="font-size: 13px;" placeholder="77, London Marylebone" />
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-teal w-100 p-2.5 mt-4" style="background-color: #0d9488;">Register New Outpatient File</button>
+                    </form>
+                </div>
+            }
+
+            <!-- PANEL 5: PATIENT SCHEDULER & BOOKINGS -->
+            @if (userRole == "Patient")
+            {
+                <div class="tab-pane fade" id="v-pills-book" role="tabpanel">
+                    <h5 class="fw-bold mb-1">Outpatient Booking request form</h5>
+                    <p class="text-muted font-mono mb-4" style="font-size: 10px;">Request specific specialist consultations</p>
+
+                    <form asp-controller="Appointments" asp-action="Book" method="post" style="font-size: 13.5px;">
+                        <input type="hidden" name="PatientId" value="PT-1001" />
+                        <input type="hidden" name="PatientName" value="@userFullName" />
+
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label class="form-label fw-bold text-dark">Clinician Specialist *</label>
+                                <select name="DoctorId" required class="form-select rounded-3 p-2.5">
+                                    <option value="">-- Choose clinician --</option>
+                                    @if (ViewBag.Doctors != null)
+                                    {
+                                        foreach (var doc in (List<SmartClinicManagementSystem.Models.Doctor>)ViewBag.Doctors)
+                                        {
+                                            <option value="@doc.Uid">@doc.FullName (@doc.Specialty)</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-bold text-dark">Consultation Date *</label>
+                                <input type="date" name="Date" required class="form-control rounded-3 p-2.5" />
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-bold text-dark">Dosing Prefered Time block *</label>
+                                <select name="Time" class="form-select rounded-3 p-2.5">
+                                    <option value="09:00">09:00 AM</option>
+                                    <option value="10:00">10:00 AM</option>
+                                    <option value="13:00">01:00 PM</option>
+                                    <option value="15:00">03:00 PM</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-bold text-dark">Describe Observed Symptoms *</label>
+                                <input type="text" name="Symptoms" required class="form-control rounded-3 p-2.5" placeholder="Tooth skin inflammation, persistent migraine" />
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-teal w-100 p-2.5 mt-4" style="background-color: #0d9488;">Schedule Priority Consult</button>
+                    </form>
+                </div>
+
+                <div class="tab-pane fade" id="v-pills-patient-history" role="tabpanel">
+                    <h5 class="fw-bold mb-1">Admissions & Diagnostics history</h5>
+                    <p class="text-muted font-mono mb-4" style="font-size: 10px;">Monitor schedules, diagnosis entries from medical board doctors</p>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle text-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Consultant Physician</th>
+                                    <th>Schedule Date</th>
+                                    <th>Inpatient Symptoms</th>
+                                    <th>Ledger Code</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (ViewBag.Appointments != null)
+                                {
+                                    foreach (var appt in (List<SmartClinicManagementSystem.Models.Appointment>)ViewBag.Appointments)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold text-teal">@appt.DoctorName</td>
+                                            <td class="font-mono">@appt.Date &bull; @appt.Time</td>
+                                            <td class="italic text-muted">@appt.Symptoms</td>
+                                            <td><span class="badge bg-warning text-dark">@appt.Status</span></td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+        </div>
+    </div>
+</div>

@@ -1,0 +1,75 @@
+@{
+    ViewData["Title"] = "Self registration Portal";
+}
+
+<div class="row justify-content-center py-5 text-start">
+    <div class="col-md-7 col-lg-6">
+        <div class="card border rounded-5 shadow-lg p-5 bg-white" style="border-radius: 30px;">
+            
+            <div class="text-center mb-4">
+                <div class="bg-teal text-white p-3 d-inline-block rounded-4 mb-3" style="background-color: #0d9488;">
+                    <i class="bi bi-person-plus-fill fs-3"></i>
+                </div>
+                <h3 class="fw-bold tracking-tight text-dark mb-1">Create Outpatient Profile</h3>
+                <p class="text-muted" style="font-size: 13px;">Establish your smart clinical account and book specialist appointments immediately</p>
+            </div>
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger rounded-3" style="font-size: 13px;">
+                    <div asp-validation-summary="All"></div>
+                </div>
+            }
+
+            <form asp-action="Register" method="post">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold text-secondary" style="font-size: 12px;">Full Name *</label>
+                        <input type="text" name="fullName" required class="form-control rounded-3 p-2.5" placeholder="Oliver Twist" style="font-size: 13.5px;" />
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold text-secondary" style="font-size: 12px;">Email Address *</label>
+                        <input type="email" name="email" required class="form-control rounded-3 p-2.5" placeholder="oliver@email.com" style="font-size: 13.5px;" />
+                    </div>
+
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold text-secondary" style="font-size: 12px;">Phone Number *</label>
+                        <input type="text" name="phone" required class="form-control rounded-3 p-2.5" placeholder="+1 (555) 777-1111" style="font-size: 13.5px;" />
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold text-secondary" style="font-size: 12px;">Date of Birth *</label>
+                        <input type="date" name="dob" required class="form-control rounded-3 p-2.5" style="font-size: 13.5px;" />
+                    </div>
+
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold text-secondary" style="font-size: 12px;">Gender *</label>
+                        <select name="gender" class="form-select rounded-3 p-2.5" style="font-size: 13.5px;">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold text-secondary" style="font-size: 12px;">Registered Residence Address *</label>
+                        <input type="text" name="address" required class="form-control rounded-3 p-2.5" placeholder="12 Main St, Marylebone" style="font-size: 13.5px;" />
+                    </div>
+                </div>
+
+                <div class="form-check mt-4 mb-4">
+                    <input class="form-check-input" type="checkbox" required id="termsCheckbox" />
+                    <label class="form-check-label text-muted" for="termsCheckbox" style="font-size: 12px;">
+                        I agree to clinical HIPAA data retention specifications.
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-teal w-full p-3 mb-3" style="background-color: #0d9488; width: 100%; font-size: 14px;">Establish My Account</button>
+            </form>
+
+            <div class="text-center mt-3" style="font-size: 13px;">
+                <span class="text-muted">Already registered on system?</span>
+                <a href="@Url.Action("Login", "Account")" class="text-decoration-none text-teal fw-bold" style="color: #0d9488;">Log In</a>
+            </div>
+
+        </div>
+    </div>
+</div>

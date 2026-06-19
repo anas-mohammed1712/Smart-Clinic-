@@ -1,0 +1,138 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper: Check if visitor is signed in
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper: Check if user document exists in firestore
+    function userExists(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId));
+    }
+
+    // Helper: Get user document data
+    function getUserData(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data;
+    }
+
+    // Helper: Get checked-in user's role
+    function getRole() {
+      return isSignedIn() && userExists(request.auth.uid)
+        ? getUserData(request.auth.uid).role
+        : 'Patient';
+    }
+
+    // Helpers for Role checks
+    function isAdmin() {
+      return getRole() == 'Admin';
+    }
+
+    function isDoctor() {
+      return getRole() == 'Doctor';
+    }
+
+    function isReceptionist() {
+      return getRole() == 'Receptionist';
+    }
+
+    // Combined staff helper for shared operations
+    function isStaff() {
+      return isAdmin() || isDoctor() || isReceptionist();
+    }
+
+    // Helper: Check if signed-in user is the owner of the document by ID
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Helper: Checks if data fields map the authenticated user
+    function isDataOwner(data) {
+      return isSignedIn() && (
+        ('userId' in data && data.userId == request.auth.uid) ||
+        ('patientId' in data && data.patientId == request.auth.uid) ||
+        ('doctorId' in data && data.doctorId == request.auth.uid) ||
+        ('uid' in data && data.uid == request.auth.uid)
+      );
+    }
+
+    // USERS COLLECTION
+    // Profile owners can manage their profiles; Admin and Receptionists can manage new/existing registers.
+    match /users/{userId} {
+      allow read, write: if isOwner(userId) || isStaff();
+    }
+
+    // PATIENTS COLLECTION
+    // Patient users can read/write their own client entries.
+    // staff members have access to registry directories/demographics.
+    match /patients/{patientId} {
+      allow read, write: if isOwner(patientId) || 
+                            isStaff() || 
+                            (resource != null && isDataOwner(resource.data)) ||
+                            (request.resource != null && isDataOwner(request.resource.data));
+    }
+
+    // DOCTORS COLLECTION
+    // Doctors manage their profiles; system staff and patients read doctor directories for appointments; admins manage registers.
+    match /doctors/{doctorId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(doctorId) || isAdmin();
+    }
+
+    // APPOINTMENTS COLLECTION
+    // Managed on check-in desk, schedule registries; Patients read/write their own tickets.
+    match /appointments/{appointmentId} {
+      allow read, write: if isStaff() || 
+                            (resource != null && isDataOwner(resource.data)) ||
+                            (request.resource != null && isDataOwner(request.resource.data));
+    }
+
+    // MEDICAL RECORDS COLLECTION
+    // Read/write limited to Doctors and Admins. Patients can get and list their own clinic charts.
+    match /medical_records/{recordId} {
+      allow read: if isDoctor() || isAdmin() || (resource != null && isDataOwner(resource.data));
+      allow write: if isDoctor() || isAdmin();
+    }
+
+    // PRESCRIPTIONS COLLECTION
+    // Authored by Doctors and Admins. Printed/assisted by staff. Read-only to patients.
+    match /prescriptions/{prescriptionId} {
+      allow read: if isStaff() || (resource != null && isDataOwner(resource.data));
+      allow write: if isDoctor() || isAdmin();
+    }
+
+    // BILLING COLLECTION
+    // Invoices managed/created by Admins and Receptionists. Clients can read/view their statements.
+    match /billing/{billingId} {
+      allow read: if isStaff() || (resource != null && isDataOwner(resource.data));
+      allow write: if isReceptionist() || isAdmin();
+    }
+
+    // NOTIFICATIONS COLLECTION
+    // Handled by staff alerting accounts. Checked-in clients can read/dismiss their own entries.
+    match /notifications/{notifId} {
+      allow read, write: if isStaff() || 
+                            (resource != null && isDataOwner(resource.data)) ||
+                            (request.resource != null && isDataOwner(request.resource.data));
+    }
+
+    // DEPARTMENTS COLLECTION
+    match /departments/{deptId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // DOCTOR DEPARTMENT REQUESTS
+    match /doctorDepartmentRequests/{requestId} {
+      allow read, write: if isDoctor() || isAdmin() ||
+                            (resource != null && isDataOwner(resource.data)) ||
+                            (request.resource != null && isDataOwner(request.resource.data));
+    }
+  }
+}

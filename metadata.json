@@ -1,0 +1,6 @@
+{
+  "name": "Smart Clinic Management System",
+  "description": "A comprehensive full-stack medical clinic platform featuring role-based dashboards, appointment scheduling, medical records, printable prescriptions, and billing analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

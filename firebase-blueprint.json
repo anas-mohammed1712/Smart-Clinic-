@@ -1,0 +1,225 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Represents a registered User profile (Admin, Doctor, Receptionist, Patient).",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique user authentication ID." },
+        "fullName": { "type": "string", "description": "Full name of the user." },
+        "email": { "type": "string", "description": "Unique email address." },
+        "phone": { "type": "string", "description": "Contact phone number." },
+        "role": { "type": "string", "enum": ["Admin", "Doctor", "Receptionist", "Patient"], "description": "User security authorization role." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp." },
+        "profileImage": { "type": "string", "description": "URL of profile photo avatar." },
+        "isActive": { "type": "boolean", "description": "Whether the user's registry remains active." },
+        "gender": { "type": "string", "description": "Gender identification." },
+        "dob": { "type": "string", "description": "Date of birth (YYYY-MM-DD)." },
+        "address": { "type": "string", "description": "Physical residential address." },
+        "specialty": { "type": "string", "description": "Clinician specialty field if applicable." },
+        "bio": { "type": "string", "description": "Short bio or professional description." },
+        "experience": { "type": "string", "description": "Doctor's years of clinical experience." }
+      },
+      "required": ["uid", "fullName", "email", "phone", "role", "createdAt", "profileImage", "isActive", "gender", "dob", "address"]
+    },
+    "PatientRecord": {
+      "title": "Patient Record",
+      "description": "Holds the specialized Patient detailed medical coordinates.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Link to User UID." },
+        "patientId": { "type": "string", "description": "System unique patient ID (PT-XXXX)." },
+        "fullName": { "type": "string", "description": "Full name of the patient." },
+        "age": { "type": "number", "description": "Age of patient calculated from dob." },
+        "gender": { "type": "string", "description": "Gender identification." },
+        "phone": { "type": "string", "description": "Phone number." },
+        "address": { "type": "string", "description": "Home address." },
+        "bloodType": { "type": "string", "description": "Blood type (A+, B-, etc.)." },
+        "medicalHistory": { "type": "string", "description": "Pre-existing historical medical summary." },
+        "emergencyContact": { "type": "string", "description": "Immediate contact person in case of emergencies." },
+        "email": { "type": "string", "description": "Patient electronic mail address." },
+        "profileImage": { "type": "string", "description": "Avatar image." }
+      },
+      "required": ["uid", "patientId", "fullName", "age", "gender", "phone", "address", "bloodType", "medicalHistory", "emergencyContact", "email", "profileImage"]
+    },
+    "DoctorRecord": {
+      "title": "Doctor Record",
+      "description": "Holds specialized Doctor detailed professional coordinates.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "User UID match." },
+        "doctorId": { "type": "string", "description": "Unique medical license doctor format ID." },
+        "fullName": { "type": "string", "description": "Full name." },
+        "specialty": { "type": "string", "description": "Doctor specialty." },
+        "experience": { "type": "string", "description": "Experience years notes." },
+        "phone": { "type": "string", "description": "Phone contact." },
+        "email": { "type": "string", "description": "Clinic email." },
+        "profileImage": { "type": "string", "description": "Avatar photo link." },
+        "bio": { "type": "string", "description": "Doctor biography detail." }
+      },
+      "required": ["uid", "doctorId", "fullName", "specialty", "experience", "phone", "email", "profileImage"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "An scheduled clinical consultation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique appointment ID." },
+        "patientId": { "type": "string", "description": "UID or patient record reference." },
+        "patientName": { "type": "string", "description": "Full name of Patient." },
+        "doctorId": { "type": "string", "description": "UID or doctor record reference." },
+        "doctorName": { "type": "string", "description": "Full name of Doctor." },
+        "date": { "type": "string", "description": "Date of appointment (YYYY-MM-DD)." },
+        "time": { "type": "string", "description": "Time slot (HH:MM)." },
+        "status": { "type": "string", "enum": ["Pending", "Approved", "Completed", "Cancelled"], "description": "Appointment status state." },
+        "notes": { "type": "string", "description": "Clinic assessment notes on appointment." },
+        "symptoms": { "type": "string", "description": "Primary complaints/symptoms declared." }
+      },
+      "required": ["id", "patientId", "patientName", "doctorId", "doctorName", "date", "time", "status"]
+    },
+    "MedicalRecord": {
+      "title": "Medical Record",
+      "description": "Official medical diagnosis, visit findings, and plans.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique history ID." },
+        "patientId": { "type": "string", "description": "Reference to patient record." },
+        "patientName": { "type": "string", "description": "Patient name." },
+        "doctorId": { "type": "string", "description": "Doctor record reference." },
+        "doctorName": { "type": "string", "description": "Doctor name." },
+        "symptoms": { "type": "string", "description": "Symptoms presented." },
+        "diagnosis": { "type": "string", "description": "Determined clinical diagnosis." },
+        "treatmentPlan": { "type": "string", "description": "Planned medical treatment." },
+        "notes": { "type": "string", "description": "Additional subjective notes." },
+        "visitDate": { "type": "string", "description": "The clinic visit date." }
+      },
+      "required": ["id", "patientId", "patientName", "doctorId", "doctorName", "symptoms", "diagnosis", "treatmentPlan", "notes", "visitDate"]
+    },
+    "Prescription": {
+      "title": "Prescription",
+      "description": "Structured medical prescriptions issued during visit.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique record ID." },
+        "appointmentId": { "type": "string", "description": "Optional associated appointment ID reference." },
+        "patientId": { "type": "string", "description": "Related patient ID." },
+        "patientName": { "type": "string", "description": "Patient full name." },
+        "doctorId": { "type": "string", "description": "Doctor ID." },
+        "doctorName": { "type": "string", "description": "Doctor full name." },
+        "medicineName": { "type": "string", "description": "Prescribed medicine name." },
+        "dosage": { "type": "string", "description": "Dosage instructions (e.g. 500mg)." },
+        "frequency": { "type": "string", "description": "Dosing frequency." },
+        "duration": { "type": "string", "description": "Prescription duration (e.g. 5 days)." },
+        "notes": { "type": "string", "description": "Special administration warnings or instructions." },
+        "date": { "type": "string", "description": "Date of prescription." }
+      },
+      "required": ["id", "patientId", "patientName", "doctorId", "doctorName", "medicineName", "dosage", "frequency", "duration", "notes", "date"]
+    },
+    "BillingInvoice": {
+      "title": "Billing Invoice",
+      "description": "Medical billing invoice representation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique ID." },
+        "invoiceNumber": { "type": "string", "description": "Official billing registry number prefix (INV-XXXX)." },
+        "patientId": { "type": "string", "description": "Invoiced patient UID." },
+        "patientName": { "type": "string", "description": "Invoiced patient full name." },
+        "service": { "type": "string", "description": "Service provided (e.g. Dental Care, Consultation)." },
+        "amount": { "type": "number", "description": "Total numerical amount charged." },
+        "paymentMethod": { "type": "string", "enum": ["Cash", "Card", "Insurance", "Bank Transfer"], "description": "Chosen payment method." },
+        "status": { "type": "string", "enum": ["Unpaid", "Paid", "Refunded"], "description": "Status state." },
+        "date": { "type": "string", "description": "Invoice date issued." }
+      },
+      "required": ["id", "invoiceNumber", "patientId", "patientName", "service", "amount", "paymentMethod", "status", "date"]
+    },
+    "AppNotification": {
+      "title": "App Notification",
+      "description": "Alert notification dispatched to clinician or patient workspaces.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique reference ID." },
+        "userId": { "type": "string", "description": "Recipient targeted user ID." },
+        "title": { "type": "string", "description": "Alert title header info." },
+        "message": { "type": "string", "description": "Body message alert description." },
+        "type": { "type": "string", "enum": ["info", "success", "warning", "error"], "description": "Category styling cue." },
+        "read": { "type": "boolean", "description": "Read flag status indicator." },
+        "timestamp": { "type": "string", "description": "Full ISO stamp." }
+      },
+      "required": ["id", "userId", "title", "message", "type", "read", "timestamp"]
+    },
+    "Department": {
+      "title": "Department",
+      "description": "Practice specialization or diagnostic department representation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique reference ID." },
+        "name": { "type": "string", "description": "Name of specialization." },
+        "description": { "type": "string", "description": "Short bio or service detail of department." }
+      },
+      "required": ["id", "name", "description"]
+    },
+    "DoctorDepartmentRequest": {
+      "title": "Doctor Department Change Request",
+      "description": "Represents a request from a click doctor to change their assigned clinic department.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique request reference ID." },
+        "doctorId": { "type": "string", "description": "Associated clinician ID." },
+        "doctorName": { "type": "string", "description": "Clinician name." },
+        "doctorEmail": { "type": "string", "description": "Clinician electronic mail." },
+        "currentDepartmentId": { "type": "string", "description": "ID of current department assigned." },
+        "currentDepartmentName": { "type": "string", "description": "Name of current department assigned." },
+        "requestedDepartmentId": { "type": "string", "description": "ID of requested department transfer." },
+        "requestedDepartmentName": { "type": "string", "description": "Name of requested department transfer." },
+        "reason": { "type": "string", "description": "Clinician reason notes." },
+        "status": { "type": "string", "enum": ["Pending", "Approved", "Rejected"], "description": "State transition status." },
+        "adminNotes": { "type": "string", "description": "Optional notes from clinical administration reviews." },
+        "createdAt": { "type": "string", "description": "ISO timestamp for record creation." },
+        "updatedAt": { "type": "string", "description": "ISO timestamp for record update." }
+      },
+      "required": ["id", "doctorId", "doctorName", "doctorEmail", "currentDepartmentId", "currentDepartmentName", "requestedDepartmentId", "requestedDepartmentName", "reason", "status", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User credential matching accounts records."
+    },
+    "/patients/{patientId}": {
+      "schema": "PatientRecord",
+      "description": "Patient detail indices."
+    },
+    "/doctors/{doctorId}": {
+      "schema": "DoctorRecord",
+      "description": "Doctor detail registries."
+    },
+    "/appointments/{appointmentId}": {
+      "schema": "Appointment",
+      "description": "Session appointment consultations."
+    },
+    "/medical_records/{medicalRecordId}": {
+      "schema": "MedicalRecord",
+      "description": "Confidential patient medical history."
+    },
+    "/prescriptions/{prescriptionId}": {
+      "schema": "Prescription",
+      "description": "Issued medical prescriptions."
+    },
+    "/billing/{billingId}": {
+      "schema": "BillingInvoice",
+      "description": "Transactions in the financial ledger."
+    },
+    "/notifications/{notifId}": {
+      "schema": "AppNotification",
+      "description": "User specific warnings and logs."
+    },
+    "/departments/{deptId}": {
+      "schema": "Department",
+      "description": "Clinic specialization segments list."
+    },
+    "/doctorDepartmentRequests/{requestId}": {
+      "schema": "DoctorDepartmentRequest",
+      "description": "Requests from doctors to change their assigned department."
+    }
+  }
+}

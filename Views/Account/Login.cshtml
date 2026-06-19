@@ -1,0 +1,87 @@
+@model SmartClinicManagementSystem.Models.User
+@{
+    ViewData["Title"] = "Outpatient Workstation Authentication";
+}
+
+<div class="row justify-content-center py-5 text-start">
+    <div class="col-md-5">
+        <div class="card border rounded-5 shadow-lg p-5 bg-white" style="border-radius: 30px;">
+            
+            <div class="text-center mb-4">
+                <div class="bg-teal text-white p-3 d-inline-block rounded-4 mb-3" style="background-color: #0d9488;">
+                    <i class="bi bi-shield-lock-fill fs-3"></i>
+                </div>
+                <h3 class="fw-bold tracking-tight text-dark mb-1">Clinic Login Platform</h3>
+                <p class="text-muted" style="font-size: 13px;">Authenticate to access your health logs and specializations</p>
+            </div>
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger rounded-3" style="font-size: 13px;">
+                    <button type="button" class="btn-close float-end" data-bs-dismiss="alert"></button>
+                    <div asp-validation-summary="All"></div>
+                </div>
+            }
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success rounded-3" style="font-size: 13px;">
+                    @TempData["SuccessMessage"]
+                </div>
+            }
+
+            <form asp-action="Login" method="post" class="space-y-3">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary" style="font-size: 12px;">Email Address *</label>
+                    <input type="email" name="email" id="emailInput" class="form-control rounded-3 p-3 text-sm focus:outline-none" required placeholder="e.g. admin@smartclinic.com" style="font-size: 14px;" />
+                </div>
+
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-1">
+                        <label class="form-label fw-semibold text-secondary" style="font-size: 12px; margin-bottom: 0;">Password *</label>
+                        <a href="@Url.Action("ForgotPassword", "Account")" class="text-decoration-none text-teal fw-semibold" style="font-size: 12px; color: #0d9488;">Forgot password?</a>
+                    </div>
+                    <input type="password" name="password" id="passwordInput" class="form-control rounded-3 p-3 text-sm" required placeholder="••••••••" style="font-size: 14px;" value="password123" />
+                </div>
+
+                <button type="submit" class="btn btn-teal w-full p-3 mb-3" style="background-color: #0d9488; font-size: 14px; width: 100%;">Sign In to Workspace</button>
+            </form>
+
+            <div class="text-center mt-3" style="font-size: 13px;">
+                <span class="text-muted">Don't have an account?</span>
+                <a href="@Url.Action("Register", "Account")" class="text-decoration-none text-teal fw-bold" style="color: #0d9488;">Create Outpatient Profile</a>
+            </div>
+
+            <!-- Testing Sandbox pre-fills -->
+            <div class="mt-5 border-top pt-4">
+                <span class="text-uppercase fw-bold text-teal d-block mb-3" style="font-size: 10px; color: #0d9488;">Simulated Credential Pre-fills</span>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-light border btn-sm text-start" onclick="fillCredential('admin@smartclinic.com')">
+                        <span class="fw-bold text-dark d-block" style="font-size: 12px;">Arthur Pendelton (Admin)</span>
+                        <span class="text-muted font-mono" style="font-size: 10px;">admin@smartclinic.com</span>
+                    </button>
+                    <button class="btn btn-light border btn-sm text-start" onclick="fillCredential('sam.reed@smartclinic.com')">
+                        <span class="fw-bold text-dark d-block" style="font-size: 12px;">Samantha Reed (Doctor)</span>
+                        <span class="text-muted font-mono" style="font-size: 10px;">sam.reed@smartclinic.com</span>
+                    </button>
+                    <button class="btn btn-light border btn-sm text-start" onclick="fillCredential('clara@smartclinic.com')">
+                        <span class="fw-bold text-dark d-block" style="font-size: 12px;">Clara Oswald (Receptionist)</span>
+                        <span class="text-muted font-mono" style="font-size: 10px;">clara@smartclinic.com</span>
+                    </button>
+                    <button class="btn btn-light border btn-sm text-start" onclick="fillCredential('marcus@philosophy.com')">
+                        <span class="fw-bold text-dark d-block" style="font-size: 12px;">Marcus Aurelius (Patient)</span>
+                        <span class="text-muted font-mono" style="font-size: 10px;">marcus@philosophy.com</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function fillCredential(email) {
+        document.getElementById('emailInput').value = email;
+        document.getElementById('passwordInput').value = 'password123';
+    }
+</script>
